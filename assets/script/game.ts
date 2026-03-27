@@ -1,4 +1,4 @@
-import { _decorator, Component, instantiate, Node, Prefab } from 'cc';
+import { _decorator, Component, instantiate, Node, Prefab, UITransform } from 'cc';
 const { ccclass, property } = _decorator;
 
 @ccclass('game')
@@ -13,23 +13,90 @@ export class game extends Component {
     @property({ type: [Node], visible: true })
     Base_Node_Array: Node[] = [];
 
+    blockNodeArr: Node[][] = [];
+    blockNum: number = 3;
+
     protected onLoad(): void {
-        this.initBlock(1);
+        window.game = this;
+        this.blockNodeArr = [[], [], []]
+        this.initBlock(this.blockNum);
     }
     
     initBlock(num) {
-        let blockNode = instantiate(this.Block_Prefab);
-        this.Block_Layer.addChild(blockNode);
-        // blockNode.setParent(this.Block_Layer);
-        // blockNode.setPosition(0, 0, 0);
+        if (num > 6) {
+            num = 6
+        }
+
+        for (let i = 0; i < this.blockNodeArr.length; i++) {
+            let arr = this.blockNodeArr[i];
+            for (let j = 0; j < arr.length; j++) {
+                arr[j].destroy();
+            }
+            this.blockNodeArr[i] = [];
+        }
+
+        for (let i = 0; i < num; i++) {
+            let blockNode = instantiate(this.Block_Prefab);
+            this.Block_Layer.addChild(blockNode);
+            blockNode.setPosition(this.Base_Node_Array[0].x, -122 + 44 * i)
+            blockNode.baseIndex = 0;
+            blockNode.blockIndex = num - i - 1;
+            blockNode.getComponent('block').init(num - i - 1);
+            this.blockNodeArr[0].push(blockNode);
+        }
     }
 
-    start() {
-
+    baseIndexCheck(pos) {
+        for (let i = 0; i < this.Base_Node_Array.length; i++) {
+            let baseNode = this.Base_Node_Array[i];
+            let width = baseNode.getComponent(UITransform).width
+            if (pos.x > baseNode.x - width / 2 && pos.x < baseNode.x + width / 2) {
+                return i;
+            }
+        }
+        return -1;
     }
 
-    update(deltaTime: number) {
-        
+    isTopBlock(blockNode) {
+        let arr = this.blockNodeArr[blockNode.baseIndex];
+        return arr.length > 0 && arr[arr.length - 1] === blockNode;
+    }
+
+    placeBlock(blockNode) {
+        if (!this.isTopBlock(blockNode)) {
+            return false;
+        }
+
+        let index = this.baseIndexCheck(blockNode.getPosition());
+        if (index == -1) {
+            return;
+        }
+
+        if (blockNode.baseIndex == index) {
+            return;
+        }
+
+        let arr = this.blockNodeArr[index];
+        if (arr.length > 0 && arr[arr.length - 1].blockIndex <= blockNode.blockIndex) {
+            return false;
+        }
+
+        let baseNode = this.Base_Node_Array[index];
+        blockNode.setPosition(baseNode.x, baseNode.y);
+
+        this.blockNodeArr[blockNode.baseIndex].pop();
+        this.blockNodeArr[index].push(blockNode);
+        blockNode.baseIndex = index;
+
+        let len = this.blockNodeArr[blockNode.baseIndex].length;
+        blockNode.y = -122 + 44 * (len - 1);
+
+        if (this.blockNodeArr[2].length == this.blockNum) {
+            this.blockNum++;
+            this.initBlock(this.blockNum);
+        }
+
+        return true
     }
 }
 
