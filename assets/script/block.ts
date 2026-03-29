@@ -1,4 +1,4 @@
-import { _decorator, Atlas, Component, Node, Sprite, SpriteAtlas, UITransform } from 'cc';
+import { _decorator, Atlas, AudioSource, Component, Node, Sprite, SpriteAtlas, UITransform } from 'cc';
 const { ccclass, property } = _decorator;
 
 @ccclass('block')
@@ -7,6 +7,7 @@ export class block extends Component {
     @property(SpriteAtlas)
     Color_Atlas: SpriteAtlas = null
     startPod: any = null;
+    static audioResumed: boolean = false;
 
     protected onLoad(): void {
         this.node.on(Node.EventType.TOUCH_START, this.onTouchStart, this);

@@ -1,4 +1,4 @@
-import { _decorator, Component, instantiate, Node, Prefab, UITransform } from 'cc';
+import { _decorator, AudioClip, AudioSource, Component, instantiate, Node, Prefab, UITransform } from 'cc';
 const { ccclass, property } = _decorator;
 
 @ccclass('game')
@@ -12,6 +12,18 @@ export class game extends Component {
 
     @property({ type: [Node], visible: true })
     Base_Node_Array: Node[] = [];
+
+    @property(AudioClip)
+    Win_Audio: AudioClip = null;
+
+    @property(AudioClip)
+    Lose_Audio: AudioClip = null;
+
+    @property(AudioClip)
+    Place_Audio: AudioClip = null;
+
+    @property(AudioClip)
+    BackGround_Audio: AudioClip = null;
 
     blockNodeArr: Node[][] = [];
     blockNum: number = 3;
@@ -62,6 +74,11 @@ export class game extends Component {
         return arr.length > 0 && arr[arr.length - 1] === blockNode;
     }
 
+    playAudio(audioClip: AudioClip) {
+        const audio = this.node.getComponent(AudioSource);
+        audio.playOneShot(audioClip, 1.0);
+    }
+
     placeBlock(blockNode) {
         if (!this.isTopBlock(blockNode)) {
             return false;
@@ -69,11 +86,11 @@ export class game extends Component {
 
         let index = this.baseIndexCheck(blockNode.getPosition());
         if (index == -1) {
-            return;
+            return false;
         }
 
         if (blockNode.baseIndex == index) {
-            return;
+            return false;
         }
 
         let arr = this.blockNodeArr[index];
@@ -92,9 +109,13 @@ export class game extends Component {
         blockNode.y = -122 + 44 * (len - 1);
 
         if (this.blockNodeArr[2].length == this.blockNum) {
+            this.playAudio(this.Win_Audio);
             this.blockNum++;
             this.initBlock(this.blockNum);
+            return true;
         }
+
+        this.playAudio(this.Place_Audio);
 
         return true
     }
